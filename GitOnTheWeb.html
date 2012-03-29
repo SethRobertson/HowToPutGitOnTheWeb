@@ -367,12 +367,13 @@ a globally authorized and valid HTTPS certificate, so git aborted
 (with a particularly useless error message on this old RHEL version,
 modern git/libcurl's have more useful error messages).</p>
 
-<p>If you have an officially issued SSL certificate you may feel free to
-not use that environmental variable.  You can also install the
-certificate authority certificate, which signed the https certificate,
-into git (either globally or locally) to avoid the problem in another
-way (for self-signed certificates, the common case for unofficial
-certificates, this is the https certificate itself).</p>
+<p>If you have an officially issued SSL certificate (they can be cheap
+or even, with https://www.startssl.com, free) you don't need to use
+that environmental variable.  You can also install the certificate
+authority certificate, which signed the https certificate, into git
+(either globally or locally) to avoid the problem in another way (for
+self-signed certificates, the common case for unofficial certificates,
+this is the https certificate itself).</p>
 
 <p>We will go ahead with this process for the common case where you don't
 have a valid official certificate.</p>
@@ -775,7 +776,10 @@ through the process of setting it up.</p>
 
 <p>If you did NOT create a server certificate using <code>CA-baka</code> earlier, then
 you need to run the following steps.  If you <em>did</em> create the certificate,
-then <em>skip</em> over these commands.</p>
+then <em>skip</em> over these commands.  Please note that the client certificates do
+<em>not</em> need to be issued by the same authority as the web server
+certificate.  You can have the web server certificate be official and
+the client certificates be self-generated.</p>
 
 <div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
 git clone git://github.com/SethRobertson/CA-baka
