@@ -24,8 +24,9 @@
       table,td,tr,th { border:1px solid black; }
       div.prediff { margin: 0pt 50pt 0pt 50pt; opacity:0.6; filter:alpha(opacity=60);}
       div.befaftdiff { clear: left; height: 0;}
-      pre.diff { border:3pt solid green; padding: 0em 1em 1em 1em; float: left; color: green; background:#eeffee; }
-      pre.diff:before { content: "File differences"; display: block; font-size:125%; font-weight:bold; padding-bottom: 5px; }
+      pre.diff,pre.wdiff { border:3pt solid green; padding: 0em 1em 1em 1em; float: left; color: green; background:#eeffee; }
+      pre.diff:before { content: "git.conf differences"; display: block; font-size:125%; font-weight:bold; padding-bottom: 5px; }
+      pre.wdiff:before { content: "gitweb.conf differences"; display: block; font-size:125%; font-weight:bold; padding-bottom: 5px; }
       diffp { color: blue; }
       diffm { color: red; }
     </style>
@@ -239,8 +240,8 @@ RewriteRule ^/g/([^/]+)/([0-9a-f]+)$ /g/?p=$1;a=commitdiff;h=$2 [R,NE]
 EOF
 service httpd reload
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="example3%3Agit.conf">New git.conf</a>
 
+<a href="example3%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
    DirectoryIndex gitweb.cgi
  &lt;/Directory&gt;
@@ -251,6 +252,7 @@ service httpd reload
 <diffp>+RewriteRule ^/g//([^/]+)/([0-9a-f]+)$ /g/?p=$1/.git;a=commitdiff;h=$2 [R,NE]</diffp>
 <diffp>+RewriteRule ^/g/([^/]+)/([0-9a-f]+)$ /g/?p=$1;a=commitdiff;h=$2 [R,NE]</diffp>
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 <p>You should now be able to visit the short (or long) URLs listed above
 and see useful content about those commits.</p>
@@ -282,8 +284,8 @@ ScriptAlias /G/ /usr/libexec/git-core/git-http-backend/
 EOF
 service httpd reload
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="example4%3Agit.conf">New git.conf</a>
 
+<a href="example4%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
  RewriteLogLevel 0
  RewriteRule ^/g//([^/]+)/([0-9a-f]+)$ /g/?p=$1/.git;a=commitdiff;h=$2 [R,NE]
@@ -297,6 +299,7 @@ service httpd reload
 <diffp>+  Allow from all</diffp>
 <diffp>+&lt;/Directory&gt;</diffp>
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 <div class="predivse"><div class="befaftprese"><!-- --></div><pre class="se"><code>
 semanage fcontext -a -t httpd_git_script_exec_t /usr/libexec/git-core/git-http-backend
@@ -318,12 +321,13 @@ can tell gitweb about it.</p>
 <div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 echo "our @git_base_url_list = ('http://`hostname`/G);" &gt;&gt; /etc/gitweb.conf
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="example4%3Agitweb.conf">New gitweb.conf</a>
 
-<div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
+<a href="example4%3Agitweb.conf">
+<div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="wdiff"><code>
  our $projectroot = &quot;/src&quot;;
 <diffp>+our @git_base_url_list = (&#39;http://dev.example.com/G&#39;);</diffp>
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 </div>
 
@@ -341,8 +345,8 @@ we are using a random name.</p>
 sed -i 's/^\( *SetEnv \)\(GIT_HTTP_EXPORT_ALL\)/\1\2\n\1REMOTE_USER anonymousweb/' /etc/httpd/conf.d/git.conf
 service httpd reload
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="example5%3Agit.conf">New git.conf</a>
 
+<a href="example5%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
  &lt;Directory &quot;/usr/libexec/git-core/&quot;&gt;
    SetEnv GIT_PROJECT_ROOT /src
@@ -352,6 +356,7 @@ service httpd reload
    Order allow,deny
    Allow from all
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 <div class="predivse"><div class="befaftprese"><!-- --></div><pre class="se"><code>
 semanage fcontext -d '/src(/.*)?'
@@ -386,8 +391,8 @@ https only.</p>
 sed -i 's/^\( *\)\(Options.*\)/\1\2\n\1SSLRequireSSL/' /etc/httpd/conf.d/git.conf
 service httpd reload
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="example6%3Agit.conf">New git.conf</a>
 
+<a href="example6%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
  &lt;Directory /var/www/git&gt;
    Options +ExecCGI
@@ -403,6 +408,7 @@ service httpd reload
    Allow from all
  &lt;/Directory&gt;
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 <div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 rm -rf GitBestForks
@@ -426,13 +432,14 @@ https, we can tell gitweb about it.</p>
 <div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 sed -i 's%http://%https://%;' /etc/gitweb.conf
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="example6%3Agitweb.conf">New gitweb.conf</a>
 
-<div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
+<a href="example6%3Agitweb.conf">
+<div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="wdiff"><code>
  our $projectroot = &quot;/src&quot;;
 <diffm>-our @git_base_url_list = (&#39;http://dev.example.com/G&#39;);</diffm>
 <diffp>+our @git_base_url_list = (&#39;https://dev.example.com/G&#39;);</diffp>
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 </div>
 
@@ -541,8 +548,8 @@ htpasswd -b /src/.git.passwd user2 password2
 rm -rf GitBestForks
 git clone https://`hostname`/G/GitBestForks
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="example7%3Agit.conf">New git.conf</a>
 
+<a href="example7%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
  &lt;Directory /var/www/git&gt;
    Options +ExecCGI
@@ -568,6 +575,7 @@ git clone https://`hostname`/G/GitBestForks
    Allow from all
  &lt;/Directory&gt;
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 <p>The clone above should have failed (or at least started asking your
 for a username/password if you have a newer (1.7.9 or later) git).  We
@@ -657,8 +665,8 @@ sed -i 's:^\(Alias /git.*\):LoadModule authn_sasl_module modules/mod_authn_sasl.
 sed -i 's:\( *\)AuthUserFile.*:\1AuthBasicProvider sasl:' /etc/httpd/conf.d/git.conf
 service httpd reload
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="example8%3Agit.conf">New git.conf</a>
 
+<a href="example8%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
 <diffp>+LoadModule authn_sasl_module modules/mod_authn_sasl.so</diffp>
  Alias /git /var/www/git
@@ -681,6 +689,7 @@ service httpd reload
    Order allow,deny
    Allow from all
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 <p>This uses saslauthd to perform the authentication, which was installed
 on my test system by default.  You obviously need to have saslauthd
@@ -845,8 +854,8 @@ service httpd reload
 rm -rf GitBestForks
 git clone https://`hostname`/G/GitBestForks
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="example9%3Agit.conf">New git.conf</a>
 
+<a href="example9%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
 <diffm>-LoadModule authn_sasl_module modules/mod_authn_sasl.so</diffm>
  Alias /git /var/www/git
@@ -871,6 +880,7 @@ git clone https://`hostname`/G/GitBestForks
    Order allow,deny
    Allow from all
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 <p>Please enter "<code>user4</code>" and "<code>password4</code>" when
 you clone, which should work.  Congratulations, you are now cooking
@@ -893,15 +903,15 @@ for LDAP groups (only a minor exaggeration).  I will use the nis
 RFC2307 format for basic groups.  Other group systems can be used as
 well, please read
 the <a href="http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html">authnz
-documentation</a>.</p>
+LDAP documentation</a>.</p>
 
 <div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 sed -i 's%^\( *\)\(AuthLDAPURL.*\)%\1\2\n\1AuthLDAPGroupAttribute memberUid\n\1AuthLDAPGroupAttributeIsDn off\n\1Require ldap-group cn=dev,ou=Group,dc=example,dc=com%' /etc/httpd/conf.d/git.conf
 rm -rf GitBestForks
 git clone https://`hostname`/G/GitBestForks
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="examplea%3Agit.conf">New git.conf</a>
 
+<a href="examplea%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
    AuthName &quot;Private git repository&quot;
    AuthBasicProvider ldap
@@ -922,6 +932,7 @@ git clone https://`hostname`/G/GitBestForks
    Order allow,deny
    Allow from all
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 <p>If you enter "<code>user4</code>" and "<code>password4</code>", it
 should <em>not</em> work.  Then try the last command again and enter
@@ -993,8 +1004,8 @@ git config --global http.sslKey ~/.ca/user6.key
 rm -rf GitBestForks
 git clone https://`hostname`/G/GitBestForks
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="exampleb%3Agit.conf">New git.conf</a>
 
+<a href="exampleb%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
 <diffp>+SSLCACertificateFile /etc/CA/ca.crt</diffp>
  Alias /git /var/www/git
@@ -1034,6 +1045,7 @@ git clone https://`hostname`/G/GitBestForks
    Allow from all
  &lt;/Directory&gt;
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 <p>The clone should work without you being prompted for passwords or
 anything, showing that SSL client certificate authentication is
@@ -1062,8 +1074,8 @@ service httpd reload
 rm -rf GitBestForks
 git clone https://`hostname`/G/GitBestForks
 </code></pre><div class="befaftpre"><!-- --></div></div>
-<a href="examplec%3Agit.conf">New git.conf</a>
 
+<a href="examplec%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
    SSLVerifyClient require
    SSLVerifyDepth 1
@@ -1080,6 +1092,7 @@ git clone https://`hostname`/G/GitBestForks
    Allow from all
  &lt;/Directory&gt;
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 <p>That should have failed because we were still using the sales ssl
 certificate.  Now we can try as a different user:</p>
