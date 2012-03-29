@@ -1,9 +1,8 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 <html lang="en" dir="ltr" xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <title>How to put git on the web</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta http-equiv="Content-Style-Type" content="text/css" />
     <style type="text/css">
       h1 {margin-left:auto; margin-right:auto; width:90%;}
       h2 {margin-top:2em;}
@@ -27,8 +26,9 @@
       pre.diff,pre.wdiff { border:3pt solid green; padding: 0em 1em 1em 1em; float: left; color: green; background:#eeffee; }
       pre.diff:before { content: "git.conf differences"; display: block; font-size:125%; font-weight:bold; padding-bottom: 5px; }
       pre.wdiff:before { content: "gitweb.conf differences"; display: block; font-size:125%; font-weight:bold; padding-bottom: 5px; }
-      diffp { color: blue; }
-      diffm { color: red; }
+      span.diffp { color: blue; }
+      span.diffm { color: red; }
+      span.hr { display: block; margin: 3pt 0 3pt 0; border-top: 1px solid green; width=20px; }
     </style>
   </head>
   <body>
@@ -75,8 +75,7 @@
   </table>
 </div>
 
-<div class="chapter">
-  <a name="test" />
+<div id="test" class="chapter">
   <h2>Test environment</h2>
   <p>Created/tested on RHEL 6.2 virgin image launched from Amazon EC2.
 RHEL 6.2 at that time was running git 1.7.1 You should be able to
@@ -128,8 +127,7 @@ instructions below).</p>
 </div>
 
 
-<div class="chapter">
-  <a name="gitweb" />
+<div id="gitweb" class="chapter">
   <h2>Simple gitweb over http</h2>
   <p>gitweb provides the ability to review recent changes in a
 repository, view diffs, file contents, branches, tags, and other
@@ -156,7 +154,7 @@ echo "Alias /g /var/www/git" &gt;&gt; /etc/httpd/conf.d/git.conf
    AddHandler cgi-script .cgi
    DirectoryIndex gitweb.cgi
  &lt;/Directory&gt;
-<diffp>+Alias /g /var/www/git</diffp>
+<span class="diffp">+Alias /g /var/www/git</span>
 </code></pre><div class="befaftdiff"><!-- --></div></div>
 </a>
 
@@ -205,8 +203,7 @@ test projects.)</p>
 </div>
 
 
-<div class="chapter">
-  <a name="shorten" />
+<div id="shorten" class="chapter">
   <h2>Gitweb URL shortening</h2>
 
   <p>However, before we abandon gitweb for greener grounds, one of the
@@ -247,11 +244,11 @@ service httpd reload
    DirectoryIndex gitweb.cgi
  &lt;/Directory&gt;
  Alias /g /var/www/git
-<diffp>+RewriteEngine on</diffp>
-<diffp>+RewriteLog &quot;/var/log/httpd/rewrite.log&quot;</diffp>
-<diffp>+RewriteLogLevel 0</diffp>
-<diffp>+RewriteRule ^/g//([^/]+)/([0-9a-f]+)$ /g/?p=$1/.git;a=commitdiff;h=$2 [R,NE]</diffp>
-<diffp>+RewriteRule ^/g/([^/]+)/([0-9a-f]+)$ /g/?p=$1;a=commitdiff;h=$2 [R,NE]</diffp>
+<span class="diffp">+RewriteEngine on</span>
+<span class="diffp">+RewriteLog &quot;/var/log/httpd/rewrite.log&quot;</span>
+<span class="diffp">+RewriteLogLevel 0</span>
+<span class="diffp">+RewriteRule ^/g//([^/]+)/([0-9a-f]+)$ /g/?p=$1/.git;a=commitdiff;h=$2 [R,NE]</span>
+<span class="diffp">+RewriteRule ^/g/([^/]+)/([0-9a-f]+)$ /g/?p=$1;a=commitdiff;h=$2 [R,NE]</span>
 </code></pre><div class="befaftdiff"><!-- --></div></div>
 </a>
 
@@ -266,8 +263,7 @@ urge you to do this.</p>
 </div>
 
 
-<div class="chapter">
-  <a name="aro" />
+<div id="aro" class="chapter">
   <h2>Anonymous read-only git http access</h2>
   <p>Now that we have gitweb access, it is time to add access to the git
 repositories.  We will start with simple read-only access over HTTP.</p>
@@ -291,14 +287,14 @@ service httpd reload
  RewriteLogLevel 0
  RewriteRule ^/g//([^/]+)/([0-9a-f]+)$ /g/?p=$1/.git;a=commitdiff;h=$2 [R,NE]
  RewriteRule ^/g/([^/]+)/([0-9a-f]+)$ /g/?p=$1;a=commitdiff;h=$2 [R,NE]
-<diffp>+ScriptAlias /G/ /usr/libexec/git-core/git-http-backend/</diffp>
-<diffp>+&lt;Directory &quot;/usr/libexec/git-core/&quot;&gt;</diffp>
-<diffp>+  SetEnv GIT_PROJECT_ROOT /src</diffp>
-<diffp>+  SetEnv GIT_HTTP_EXPORT_ALL</diffp>
-<diffp>+  Options +ExecCGI</diffp>
-<diffp>+  Order allow,deny</diffp>
-<diffp>+  Allow from all</diffp>
-<diffp>+&lt;/Directory&gt;</diffp>
+<span class="diffp">+ScriptAlias /G/ /usr/libexec/git-core/git-http-backend/</span>
+<span class="diffp">+&lt;Directory &quot;/usr/libexec/git-core/&quot;&gt;</span>
+<span class="diffp">+  SetEnv GIT_PROJECT_ROOT /src</span>
+<span class="diffp">+  SetEnv GIT_HTTP_EXPORT_ALL</span>
+<span class="diffp">+  Options +ExecCGI</span>
+<span class="diffp">+  Order allow,deny</span>
+<span class="diffp">+  Allow from all</span>
+<span class="diffp">+&lt;/Directory&gt;</span>
 </code></pre><div class="befaftdiff"><!-- --></div></div>
 </a>
 
@@ -326,15 +322,14 @@ echo "our @git_base_url_list = ('http://`hostname`/G);" &gt;&gt; /etc/gitweb.con
 <a href="example4%3Agitweb.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="wdiff"><code>
  our $projectroot = &quot;/src&quot;;
-<diffp>+our @git_base_url_list = (&#39;http://dev.example.com/G&#39;);</diffp>
+<span class="diffp">+our @git_base_url_list = (&#39;http://dev.example.com/G&#39;);</span>
 </code></pre><div class="befaftdiff"><!-- --></div></div>
 </a>
 
 </div>
 
 
-<div class="chapter">
-  <a name="arw" />
+<div id="arw" class="chapter">
   <h2>Anonymous read-write git http access</h2>
   <p>The next step is adding public write access.</p>
 
@@ -352,7 +347,7 @@ service httpd reload
  &lt;Directory &quot;/usr/libexec/git-core/&quot;&gt;
    SetEnv GIT_PROJECT_ROOT /src
    SetEnv GIT_HTTP_EXPORT_ALL
-<diffp>+  SetEnv REMOTE_USER anonymousweb</diffp>
+<span class="diffp">+  SetEnv REMOTE_USER anonymousweb</span>
    Options +ExecCGI
    Order allow,deny
    Allow from all
@@ -382,8 +377,7 @@ when I suggested doing this on irrelevant repos.</p>
 </div>
 
 
-<div class="chapter">
-  <a name="https" />
+<div id="https" class="chapter">
   <h2>Anonymous read-write git https access</h2>
   <p>Let's start adding some security.  First off, let's restrict this to
 https only.</p>
@@ -397,14 +391,14 @@ service httpd reload
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
  &lt;Directory /var/www/git&gt;
    Options +ExecCGI
-<diffp>+  SSLRequireSSL</diffp>
+<span class="diffp">+  SSLRequireSSL</span>
    AddHandler cgi-script .cgi
    DirectoryIndex gitweb.cgi
  &lt;/Directory&gt;
-<hr />   SetEnv GIT_HTTP_EXPORT_ALL
+<span class="hr"></span>   SetEnv GIT_HTTP_EXPORT_ALL
    SetEnv REMOTE_USER anonymousweb
    Options +ExecCGI
-<diffp>+  SSLRequireSSL</diffp>
+<span class="diffp">+  SSLRequireSSL</span>
    Order allow,deny
    Allow from all
  &lt;/Directory&gt;
@@ -437,16 +431,15 @@ sed -i 's%http://%https://%;' /etc/gitweb.conf
 <a href="example6%3Agitweb.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="wdiff"><code>
  our $projectroot = &quot;/src&quot;;
-<diffm>-our @git_base_url_list = (&#39;http://dev.example.com/G&#39;);</diffm>
-<diffp>+our @git_base_url_list = (&#39;https://dev.example.com/G&#39;);</diffp>
+<span class="diffm">-our @git_base_url_list = (&#39;http://dev.example.com/G&#39;);</span>
+<span class="diffp">+our @git_base_url_list = (&#39;https://dev.example.com/G&#39;);</span>
 </code></pre><div class="befaftdiff"><!-- --></div></div>
 </a>
 
 </div>
 
 
-<div class="chapter">
-  <a name="serververify" />
+<div id="serververify" class="chapter">
   <h2>Adding https server certificate verification</h2>
   <p>You may have noticed the "<code>GIT_SSL_NO_VERIFY=1</code>" on
 the command line?  Well, the system I was experimenting on didn't have
@@ -531,8 +524,7 @@ the git clone should definitely work.</p>
 </div>
 
 
-<div class="chapter">
-  <a name="authuserfile" />
+<div id="authuserfile" class="chapter">
   <h2>Adding Basic AuthUserFile authentication</h2>
   <p>We will be adding basic AuthUserFile authentication now.  However, I
 cannot actually recommend this as a good final configuration for you,
@@ -555,23 +547,23 @@ git clone https://`hostname`/G/GitBestForks
  &lt;Directory /var/www/git&gt;
    Options +ExecCGI
    SSLRequireSSL
-<diffp>+  AuthType basic</diffp>
-<diffp>+  AuthName &quot;Private git repository&quot;</diffp>
-<diffp>+  AuthUserFile /src/.git.passwd</diffp>
-<diffp>+  Require valid-user</diffp>
+<span class="diffp">+  AuthType basic</span>
+<span class="diffp">+  AuthName &quot;Private git repository&quot;</span>
+<span class="diffp">+  AuthUserFile /src/.git.passwd</span>
+<span class="diffp">+  Require valid-user</span>
    AddHandler cgi-script .cgi
    DirectoryIndex gitweb.cgi
  &lt;/Directory&gt;
-<hr /> &lt;Directory &quot;/usr/libexec/git-core/&quot;&gt;
+<span class="hr"></span> &lt;Directory &quot;/usr/libexec/git-core/&quot;&gt;
    SetEnv GIT_PROJECT_ROOT /src
    SetEnv GIT_HTTP_EXPORT_ALL
-<diffm>-  SetEnv REMOTE_USER anonymousweb</diffm>
+<span class="diffm">-  SetEnv REMOTE_USER anonymousweb</span>
    Options +ExecCGI
    SSLRequireSSL
-<diffp>+  AuthType basic</diffp>
-<diffp>+  AuthName &quot;Private git repository&quot;</diffp>
-<diffp>+  AuthUserFile /src/.git.passwd</diffp>
-<diffp>+  Require valid-user</diffp>
+<span class="diffp">+  AuthType basic</span>
+<span class="diffp">+  AuthName &quot;Private git repository&quot;</span>
+<span class="diffp">+  AuthUserFile /src/.git.passwd</span>
+<span class="diffp">+  Require valid-user</span>
    Order allow,deny
    Allow from all
  &lt;/Directory&gt;
@@ -620,8 +612,7 @@ actually be counterproductive.</p>
 
 </div>
 
-<div class="chapter">
-  <a name="pam" />
+<div id="pam" class="chapter">
   <h2>Switching to Basic PAM authentication</h2>
   <p>Well, if you remember, I recommended against using Basic
 AuthUserFile authentication because it forces a secondary management
@@ -669,23 +660,23 @@ service httpd reload
 
 <a href="example8%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
-<diffp>+LoadModule authn_sasl_module modules/mod_authn_sasl.so</diffp>
+<span class="diffp">+LoadModule authn_sasl_module modules/mod_authn_sasl.so</span>
  Alias /git /var/www/git
 
  &lt;Directory /var/www/git&gt;
-<hr />   SSLRequireSSL
+<span class="hr"></span>   SSLRequireSSL
    AuthType basic
    AuthName &quot;Private git repository&quot;
-<diffm>-  AuthUserFile /src/.git.passwd</diffm>
-<diffp>+  AuthBasicProvider sasl</diffp>
+<span class="diffm">-  AuthUserFile /src/.git.passwd</span>
+<span class="diffp">+  AuthBasicProvider sasl</span>
    Require valid-user
    AddHandler cgi-script .cgi
    DirectoryIndex gitweb.cgi
-<hr />   SSLRequireSSL
+<span class="hr"></span>   SSLRequireSSL
    AuthType basic
    AuthName &quot;Private git repository&quot;
-<diffm>-  AuthUserFile /src/.git.passwd</diffm>
-<diffp>+  AuthBasicProvider sasl</diffp>
+<span class="diffm">-  AuthUserFile /src/.git.passwd</span>
+<span class="diffp">+  AuthBasicProvider sasl</span>
    Require valid-user
    Order allow,deny
    Allow from all
@@ -741,8 +732,7 @@ work.</p>
 
 </div>
 
-<div class="chapter">
-  <a name="ldap" />
+<div id="ldap" class="chapter">
   <h2>Switching to Basic LDAP authentication</h2>
   <p>PAM is nice and everything but perhaps you want to restrict access to
 your servers differently from the much larger set of people who have
@@ -858,25 +848,25 @@ git clone https://`hostname`/G/GitBestForks
 
 <a href="example9%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
-<diffm>-LoadModule authn_sasl_module modules/mod_authn_sasl.so</diffm>
+<span class="diffm">-LoadModule authn_sasl_module modules/mod_authn_sasl.so</span>
  Alias /git /var/www/git
 
  &lt;Directory /var/www/git&gt;
-<hr />   SSLRequireSSL
+<span class="hr"></span>   SSLRequireSSL
    AuthType basic
    AuthName &quot;Private git repository&quot;
-<diffm>-  AuthBasicProvider sasl</diffm>
-<diffp>+  AuthBasicProvider ldap</diffp>
-<diffp>+  AuthLDAPURL &quot;ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)&quot;</diffp>
+<span class="diffm">-  AuthBasicProvider sasl</span>
+<span class="diffp">+  AuthBasicProvider ldap</span>
+<span class="diffp">+  AuthLDAPURL &quot;ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)&quot;</span>
    Require valid-user
    AddHandler cgi-script .cgi
    DirectoryIndex gitweb.cgi
-<hr />   SSLRequireSSL
+<span class="hr"></span>   SSLRequireSSL
    AuthType basic
    AuthName &quot;Private git repository&quot;
-<diffm>-  AuthBasicProvider sasl</diffm>
-<diffp>+  AuthBasicProvider ldap</diffp>
-<diffp>+  AuthLDAPURL &quot;ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)&quot;</diffp>
+<span class="diffm">-  AuthBasicProvider sasl</span>
+<span class="diffp">+  AuthBasicProvider ldap</span>
+<span class="diffp">+  AuthLDAPURL &quot;ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)&quot;</span>
    Require valid-user
    Order allow,deny
    Allow from all
@@ -890,8 +880,7 @@ with LDAP!
 
 </div>
 
-<div class="chapter">
-  <a name="ldap_group" />
+<div id="ldap_group" class="chapter">
   <h2>Restricting LDAP access by group</h2>
   <p>If were reading particularly carefully, you might have noticed in
 the LDIF above, I placed "<code>user4</code>" into the
@@ -917,18 +906,18 @@ git clone https://`hostname`/G/GitBestForks
    AuthName &quot;Private git repository&quot;
    AuthBasicProvider ldap
    AuthLDAPURL &quot;ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)&quot;
-<diffp>+  AuthLDAPGroupAttribute memberUid</diffp>
-<diffp>+  AuthLDAPGroupAttributeIsDn off</diffp>
-<diffp>+  Require ldap-group cn=dev,ou=Group,dc=example,dc=com</diffp>
+<span class="diffp">+  AuthLDAPGroupAttribute memberUid</span>
+<span class="diffp">+  AuthLDAPGroupAttributeIsDn off</span>
+<span class="diffp">+  Require ldap-group cn=dev,ou=Group,dc=example,dc=com</span>
    Require valid-user
    AddHandler cgi-script .cgi
    DirectoryIndex gitweb.cgi
-<hr />   AuthName &quot;Private git repository&quot;
+<span class="hr"></span>   AuthName &quot;Private git repository&quot;
    AuthBasicProvider ldap
    AuthLDAPURL &quot;ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)&quot;
-<diffp>+  AuthLDAPGroupAttribute memberUid</diffp>
-<diffp>+  AuthLDAPGroupAttributeIsDn off</diffp>
-<diffp>+  Require ldap-group cn=dev,ou=Group,dc=example,dc=com</diffp>
+<span class="diffp">+  AuthLDAPGroupAttribute memberUid</span>
+<span class="diffp">+  AuthLDAPGroupAttributeIsDn off</span>
+<span class="diffp">+  Require ldap-group cn=dev,ou=Group,dc=example,dc=com</span>
    Require valid-user
    Order allow,deny
    Allow from all
@@ -943,8 +932,7 @@ which <em>should</em> work.</p>
 </div>
 
 
-<div class="chapter">
-  <a name="ssl" />
+<div id="ssl" class="chapter">
   <h2>Switching to SSL client certificate authentication</h2>
   <p>LDAP is all nice and everything, especially with keystore credential
 storage so you don't have to enter the username/password every time,
@@ -1008,40 +996,40 @@ git clone https://`hostname`/G/GitBestForks
 
 <a href="exampleb%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
-<diffp>+SSLCACertificateFile /etc/CA/ca.crt</diffp>
+<span class="diffp">+SSLCACertificateFile /etc/CA/ca.crt</span>
  Alias /git /var/www/git
 
  &lt;Directory /var/www/git&gt;
    Options +ExecCGI
    SSLRequireSSL
-<diffm>-  AuthType basic</diffm>
-<diffm>-  AuthName &quot;Private git repository&quot;</diffm>
-<diffm>-  AuthBasicProvider ldap</diffm>
-<diffm>-  AuthLDAPURL &quot;ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)&quot;</diffm>
-<diffm>-  AuthLDAPGroupAttribute memberUid</diffm>
-<diffm>-  AuthLDAPGroupAttributeIsDn off</diffm>
-<diffm>-  Require ldap-group cn=dev,ou=Group,dc=example,dc=com</diffm>
-<diffm>-  Require valid-user</diffm>
-<diffp>+  SSLVerifyClient require</diffp>
-<diffp>+  SSLVerifyDepth 1</diffp>
-<diffp>+  SSLUserName SSL_CLIENT_S_DN_CN</diffp>
+<span class="diffm">-  AuthType basic</span>
+<span class="diffm">-  AuthName &quot;Private git repository&quot;</span>
+<span class="diffm">-  AuthBasicProvider ldap</span>
+<span class="diffm">-  AuthLDAPURL &quot;ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)&quot;</span>
+<span class="diffm">-  AuthLDAPGroupAttribute memberUid</span>
+<span class="diffm">-  AuthLDAPGroupAttributeIsDn off</span>
+<span class="diffm">-  Require ldap-group cn=dev,ou=Group,dc=example,dc=com</span>
+<span class="diffm">-  Require valid-user</span>
+<span class="diffp">+  SSLVerifyClient require</span>
+<span class="diffp">+  SSLVerifyDepth 1</span>
+<span class="diffp">+  SSLUserName SSL_CLIENT_S_DN_CN</span>
    AddHandler cgi-script .cgi
    DirectoryIndex gitweb.cgi
  &lt;/Directory&gt;
-<hr />   SetEnv GIT_HTTP_EXPORT_ALL
+<span class="hr"></span>   SetEnv GIT_HTTP_EXPORT_ALL
    Options +ExecCGI
    SSLRequireSSL
-<diffm>-  AuthType basic</diffm>
-<diffm>-  AuthName &quot;Private git repository&quot;</diffm>
-<diffm>-  AuthBasicProvider ldap</diffm>
-<diffm>-  AuthLDAPURL &quot;ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)&quot;</diffm>
-<diffm>-  AuthLDAPGroupAttribute memberUid</diffm>
-<diffm>-  AuthLDAPGroupAttributeIsDn off</diffm>
-<diffm>-  Require ldap-group cn=dev,ou=Group,dc=example,dc=com</diffm>
-<diffm>-  Require valid-user</diffm>
-<diffp>+  SSLVerifyClient require</diffp>
-<diffp>+  SSLVerifyDepth 1</diffp>
-<diffp>+  SSLUserName SSL_CLIENT_S_DN_CN</diffp>
+<span class="diffm">-  AuthType basic</span>
+<span class="diffm">-  AuthName &quot;Private git repository&quot;</span>
+<span class="diffm">-  AuthBasicProvider ldap</span>
+<span class="diffm">-  AuthLDAPURL &quot;ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)&quot;</span>
+<span class="diffm">-  AuthLDAPGroupAttribute memberUid</span>
+<span class="diffm">-  AuthLDAPGroupAttributeIsDn off</span>
+<span class="diffm">-  Require ldap-group cn=dev,ou=Group,dc=example,dc=com</span>
+<span class="diffm">-  Require valid-user</span>
+<span class="diffp">+  SSLVerifyClient require</span>
+<span class="diffp">+  SSLVerifyDepth 1</span>
+<span class="diffp">+  SSLUserName SSL_CLIENT_S_DN_CN</span>
    Order allow,deny
    Allow from all
  &lt;/Directory&gt;
@@ -1062,8 +1050,7 @@ some hints on how to do this in different browsers.</p>
 </div>
 
 
-<div class="chapter">
-  <a name="ssl_group" />
+<div id="ssl_group" class="chapter">
   <h2>Restricting client certificates by group</h2>
   <p>Again, the user we tested with was part of group sales (gotta watch
 those Sales 'droids every minute!).  So we can restrict access to the
@@ -1081,14 +1068,14 @@ git clone https://`hostname`/G/GitBestForks
    SSLVerifyClient require
    SSLVerifyDepth 1
    SSLUserName SSL_CLIENT_S_DN_CN
-<diffp>+  SSLRequire ( %{SSL_CLIENT_S_DN_OU} eq &quot;SCM&quot; )</diffp>
+<span class="diffp">+  SSLRequire ( %{SSL_CLIENT_S_DN_OU} eq &quot;SCM&quot; )</span>
    AddHandler cgi-script .cgi
    DirectoryIndex gitweb.cgi
  &lt;/Directory&gt;
-<hr />   SSLVerifyClient require
+<span class="hr"></span>   SSLVerifyClient require
    SSLVerifyDepth 1
    SSLUserName SSL_CLIENT_S_DN_CN
-<diffp>+  SSLRequire ( %{SSL_CLIENT_S_DN_OU} eq &quot;SCM&quot; )</diffp>
+<span class="diffp">+  SSLRequire ( %{SSL_CLIENT_S_DN_OU} eq &quot;SCM&quot; )</span>
    Order allow,deny
    Allow from all
  &lt;/Directory&gt;
@@ -1154,8 +1141,7 @@ exampled%3Agitweb.conf
 It worked for me. W0OT!
 -->
 
-<div class="chapter">
-  <a name="Cleanup" />
+<div id="Cleanup" class="chapter">
   <h2>Limited Cleanup</h2>
 
   <p>Please remember that if you followed the instructions above, we
@@ -1182,8 +1168,7 @@ rm -ri /etc/CA /src ~/GOTW ~/.ca /etc/pam.d/http
 </div>
 
 
-<div class="chapter">
-  <a name="Disclaimer" />
+<div id="Disclaimer" class="chapter">
   <h2>Disclaimer</h2>
 
   <p>Information is not promised or guaranteed to be correct, current, or
@@ -1197,8 +1182,7 @@ rm -ri /etc/CA /src ~/GOTW ~/.ca /etc/pam.d/http
     related to any and all matters described.</p>
 </div>
 
-<div class="chapter">
-  <a name="Copyright" />
+<div id="Copyright" class="chapter">
   <h2>Copyright</h2>
 
   <p>Copyright ⓒ 2012 Seth Robertson</p>
@@ -1221,8 +1205,7 @@ rm -ri /etc/CA /src ~/GOTW ~/.ca /etc/pam.d/http
       source</a>.  Thanks.</p>
 </div>
 
-<div class="chapter">
-  <a name="Thanks" />
+<div id="Thanks" class="chapter">
   <h2>Thanks</h2>
 
   <p>Thanks to the experts on #git and my coworkers for review, feedback,
