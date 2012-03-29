@@ -1,0 +1,1008 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en" dir="ltr" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>How to put git on the web</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <style type="text/css">
+      h1 {margin-left:auto; margin-right:auto; width:90%;}
+      h2 {margin-top:2em;}
+      h3 {margin-top:1em;margin-left:1em;}
+      ul {margin-left:1em;}
+      .i2 {margin-left:2em;}
+      body {margin:3em; background-color:#ffffff;}
+      div.befaftpre { clear: left; height: 0;}
+      pre { border:1pt solid black; padding: 0em 1em 1em 1em; float: left; }
+      div.predivse { margin: 0pt 50pt 0pt 50pt; opacity:0.6; filter:alpha(opacity=60);}
+      div.befaftprese { clear: left; height: 0;}
+      pre.se { border:3pt solid red; padding: 0em 1em 1em 1em; float: left; color: red; background:#ffeeee; }
+      pre.se:before { content: "SELinux instructions"; display: block; font-size:125%; font-weight:bold; padding-bottom: 5px; }
+      pre.none { border:0pt solid white; float: none;}
+      code.inline { white-space: nowrap; border:1pt solid gray; padding: 1pt; }
+      table,td,tr,th { border:1px solid black; }
+    </style>
+  </head>
+  <body>
+    <div id='content'>
+      <h1><a href="http://sethrobertson.github.com/HowToPutGitOnTheWeb/">How to put git on the web</a></h1>
+
+<div class="chapter">
+  <h2>Executive Summary</h2>
+
+  <p>This document provides a walk-through to share (either with
+    gitweb or as a remote for <code>git clone</code> and friends) your
+    git repositories over HTTP/HTTPS with a variety of authentication
+    methods: none, standard AuthUserFile Basic authentication, PAM
+    authentication, LDAP authentication, and SSL Client Certificate
+    authentication.  This specifically is <em>not</em> a document on
+    how to publish the contents of a git repository as a website.</p>
+</div>
+
+<div class="chapter">
+  <h2>TL;DR</h2>
+
+  <p>Here are links to configuration files which let me work.  Please
+    note these are also the chapter headings.  If you didn't read and
+    it doesn't work, I don't want to hear about it.  Contrariwise, if
+    you did read the entire document and it doesn't work, I would like
+    to hear about it.</p>
+
+  <table>
+    <tr><th>Chapter</th><th>Files</th></tr>
+    <tr><td><a href="#test">Test environment</a></td><td><a href="example1%3Agit.conf">git.conf</a></td></tr>
+    <tr><td><a href="#gitweb">Simple gitweb over http</a></td><td><a href="example2%3Agit.conf">git.conf</a> <a href="example2%3Agitweb.conf">gitweb.conf</a></td></tr>
+    <tr><td><a href="#shorten">Gitweb URL shortening</a></td><td><a href="example3%3Agit.conf">git.conf</a></td></tr>
+    <tr><td><a href="#aro">Anonymous read-only git http access</a></td><td><a href="example4%3Agit.conf">git.conf</a> <a href="example4%3Agitweb.conf">gitweb.conf</a></td></tr>
+    <tr><td><a href="#arw">Anonymous read-write git http access</a></td><td><a href="example5%3Agit.conf">git.conf</a></td></tr>
+    <tr><td><a href="#https">Anonymous read-write git https access</a></td><td><a href="example6%3Agit.conf">git.conf</a> <a href="example6%3Agitweb.conf">gitweb.conf</a></td></tr>
+    <tr><td><a href="#serververify">Adding https server certificate verification</a></td><td><a href="example7%3Agit.conf">git.conf</a></td></tr>
+    <tr><td><a href="#authuserfile">Adding Basic AuthUserFile authentication</a></td><td><a href="example8%3Agit.conf">git.conf</a></td></tr>
+    <tr><td><a href="#pam">Switching to Basic PAM authentication</a></td><td><a href="example9%3Agit.conf">git.conf</a></td></tr>
+    <tr><td><a href="#ldap">Switching to Basic LDAP authentication</a></td><td><a href="examplea%3Agit.conf">git.conf</a></td></tr>
+    <tr><td><a href="#ldap_group">Restricting LDAP access by group</a></td><td><a href="exampleb%3Agit.conf">git.conf</a></td></tr>
+    <tr><td><a href="#ssl">Switching to SSL client certificate authentication</a></td><td><a href="examplec%3Agit.conf">git.conf</a></td></tr>
+    <tr><td><a href="#ssl_group">Restricting client certificates by group</a></td><td><a href="exampled%3Agit.conf">git.conf</a></td></tr>
+    <tr><td><a href="#Cleanup">Limited Cleanup, Disclaimers, Copyrights, Thanks, etc</a></td><td></td></tr>
+  </table>
+</div>
+
+<div class="chapter">
+  <a name="test" />
+  <h2>Test environment</h2>
+  <p>Created/tested on RHEL 6.2 virgin image launched from Amazon EC2.
+RHEL 6.2 at that time was running git 1.7.1 You should be able to
+exactly reproduce my steps if you use the same image, but in general
+should be able to reproduce my steps on any Unix/Linux system running
+Apache.</p>
+
+<p>I chose <code>/src</code> as my directory of git repos.  You of
+course may select any directory you want, replacing <code>/src</code>
+as necessary. I also chose <code>http://&lt;hostname&gt;/g</code> as my
+gitweb path, and <code>http://&lt;hostname&gt;/G</code> as my git URL base.
+The testing clone and software installation unpacking I did for a
+variety of reasons were done in <code>~/GOTW</code>.</p>
+
+<p>Note, the method I am are documenting is to add access to services
+and get them working <em>first</em>, and only after they are working
+do I add access restriction.  This simplifies testing greatly since
+there are fewer moving parts.  Thus it is strongly suggested to use
+some irrelevant test repos, like I did below, which will not matter if
+someone views, clones, or writes to them before access control is
+enabled.  Of course, when you get to the stage of access control that
+you are comfortable with, you may stop at that time.</p>
+
+<p>The RHEL 6.2 instance I was running of course had Apache with https
+installed.  Additionally, I installed the "git" and "gitweb" packages.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+yum install git gitweb
+service iptables stop
+service apache2 start
+mkdir /src
+chmod 755 /src
+cd /src
+git config --global user.email admin@example.com
+git config --global user.name "Test user"
+git clone --bare git://github.com/SethRobertson/GitBestPractices.git GitBestForks
+git clone --bare git://github.com/SethRobertson/GitFixUm.git GitFixedForks
+git clone git://github.com/SethRobertson/libbk.git libkfork
+chown -R apache /src/*
+mkdir ~/GOTW
+cd ~/GOTW
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>As an alternative to stopping iptables you could enable port 80 and
+port 443 traffic and ensure that the system can talk to the LDAP
+server (or itself on the LDAP port if you fully follow the
+instructions below).</p>
+
+</div>
+
+
+<div class="chapter">
+  <a name="gitweb" />
+  <h2>Simple gitweb over http</h2>
+  <p>gitweb provides the ability to review recent changes in a
+repository, view diffs, file contents, branches, tags, and other
+useful read-only repository information via a web application.  I
+strongly recommend setting gitweb up, to provide a stateless and
+portable method to examine arbitrary git repositories.  It also
+provides a great linkage mechanism to link emails, bug tracking
+systems, wikis, to git repositories, which improves productivity
+through synergy.</p>
+
+<p>Installing the gitweb RPM on RHEL 6.2 automatically creates <a
+href="example1%3Agit.conf">/etc/httpd/conf.d/git.conf</a>.  This is the
+file we will be doing the majority of our work with.</p>
+
+<p>However, I'm going to recommend adding "/g" as a shortcut to the
+default "/git" to shorten the link lengths.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+echo "Alias /g /var/www/git" &gt;&gt; /etc/httpd/conf.d/git.conf
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>This generates a <a href="example2%3Agit.conf">revised git.conf</a>
+so we need to tell Apache about the configuration change:</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+service httpd reload
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>As I mentioned in the test environment section, I am placing the git
+repositories in /src, so I need to tell gitweb where to find those
+repositories.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+mv /etc/gitweb.conf /etc/gitweb.conf.dist
+echo 'our $projectroot = "/src";' &gt; /etc/gitweb.conf
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>The <a href="example2%3Agitweb.conf">new gitweb.conf</a> is very
+simple, but simplicity is good.  You can examine the
+/etc/gitweb.conf.dist file for other things you might want, but (with
+one exception I'll be using later) I've never had to use them
+myself.</p>
+
+<p>Now you can try to visit <code>http://`hostname`/g</code> in a browser.</p>
+
+<p>You should get your list of projects.  If you do not, getting perhaps
+"404 - No projects found", as for example was the case on the RHEL 6.2
+AWS instance I used for testing, perhaps you are encountering the
+delights of mandatory access control.  If so, you can follow
+these SELinux boxes.  If you are lucky enough to not have that
+problem, you can skip them.</p>
+
+<div class="predivse"><div class="befaftprese"><!-- --></div><pre class="se"><code>
+yum install policycoreutils-python
+semanage fcontext -a -t git_system_content_t  '/src(/.*)?'
+restorecon -R -v /src
+</code></pre><div class="befaftprese"><!-- --></div></div>
+
+<p>At this point, you should be seeing the list of projects, with
+"Unnamed" descriptions (you can name them by editing
+<code>/src/*/description</code>, not that it is worth it for these
+test projects.)</p>
+</div>
+
+
+<div class="chapter">
+  <a name="shorten" />
+  <h2>Gitweb URL shortening</h2>
+
+  <p>However, before we abandon gitweb for greener grounds, one of the
+items espoused in <a
+href="http://sethrobertson.github.com/GitBestPractices/">git best
+practices</a> is to integrate git commit messages with email, IRC, bug
+tracking, and the like.  However, if you click your way down to a
+commit, you will see that the URL being generated is quite long.</p>
+
+<p><code>http://`hostname`/g/?p=GitBestForks;a=commitdiff;h=fc2fd67834612c77a67a617f942a0202be4dbf4</code></p>
+
+<p>You can of course use standard SHA shortening here:</p>
+
+<p><code>http://`hostname`/g/?p=GitBestForks;a=commitdiff;h=fc2fd67</code></p>
+
+<p>But even this is larger than it needs to be.  Why not go for
+something more like:</p>
+
+<p><code>http://`hostname`/g/GitBestForks/4fc2fd</code></p>
+
+<p>Or if you had a non-bare repo, you can use something like:</p>
+
+<p><code>http://`hostname`/g//libkfork/ab9f5f3</code></p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+cat &gt;&gt; /etc/httpd/conf.d/git.conf &lt;&lt;'EOF'
+RewriteEngine on
+RewriteLog "/var/log/httpd/rewrite.log"
+RewriteLogLevel 0
+RewriteRule ^/g//([^/]+)/([0-9a-f]+)$ /g/?p=$1/.git;a=commitdiff;h=$2 [R,NE]
+RewriteRule ^/g/([^/]+)/([0-9a-f]+)$ /g/?p=$1;a=commitdiff;h=$2 [R,NE]
+EOF
+service httpd reload
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="example3%3Agit.conf">New git.conf</a>
+
+<p>You should now be able to visit the short (or long) URLs listed above
+and see useful content about those commits.</p>
+
+<p>However, doing this is entirely optional and only useful if you have a
+post-receive hook which creates URLs for emails or other services and
+you desire for those URLs to be shorter.  In other words, I strongly
+urge you to do this.</p>
+
+</div>
+
+
+<div class="chapter">
+  <a name="aro" />
+  <h2>Anonymous read-only git http access</h2>
+  <p>Now that we have gitweb access, it is time to add access to the git
+repositories.  We will start with simple read-only access over HTTP.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+cat &gt;&gt; /etc/httpd/conf.d/git.conf &lt;&lt;'EOF'
+ScriptAlias /G/ /usr/libexec/git-core/git-http-backend/
+&lt;Directory "/usr/libexec/git-core/"&gt;
+  SetEnv GIT_PROJECT_ROOT /src
+  SetEnv GIT_HTTP_EXPORT_ALL
+  Options +ExecCGI
+  Order allow,deny
+  Allow from all
+&lt;/Directory&gt;
+EOF
+service httpd reload
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="example4%3Agit.conf">New git.conf</a>
+
+<div class="predivse"><div class="befaftprese"><!-- --></div><pre class="se"><code>
+semanage fcontext -a -t httpd_git_script_exec_t /usr/libexec/git-core/git-http-backend
+restorecon -R -v /usr/libexec/git-core/git-http-backend
+</code></pre><div class="befaftprese"><!-- --></div></div>
+
+<p>You should be able to <code class="inline">git clone
+http://localhost/G/GitBestForks</code></p>
+
+<p>Once again, this read-only clone access is <em>unprotected</em>.
+However, at least it is only read-only.  Attempting to write gets
+"<code>error: Cannot access URL http://localhost/G/GitBestForks/,
+return code 22</code>" or perhaps a friendlier error message on a more
+recent git.</p>
+
+<p>One last item.  Now that we have http access to the repository, we
+can tell gitweb about it.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+echo "our @git_base_url_list = ('http://`hostname`/G);" &gt;&gt; /etc/gitweb.conf
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="example4%3Agitweb.conf">New gitweb.conf</a>
+
+</div>
+
+
+<div class="chapter">
+  <a name="arw" />
+  <h2>Anonymous read-write git http access</h2>
+  <p>The next step is adding public write access.</p>
+
+<p>Adding write access is actually quite easy, you just need to tell
+git what user is involved.  Of course, since this is still anonymous,
+we are using a random name.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+sed -i 's/^\( *SetEnv \)\(GIT_HTTP_EXPORT_ALL\)/\1\2\n\1REMOTE_USER anonymousweb/' /etc/httpd/conf.d/git.conf
+service httpd reload
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="example5%3Agit.conf">New git.conf</a>
+
+<div class="predivse"><div class="befaftprese"><!-- --></div><pre class="se"><code>
+semanage fcontext -d '/src(/.*)?'
+semanage fcontext -a -t httpd_git_rw_content_t '/src(/.*)?'
+restorecon -R -v /src
+</code></pre><div class="befaftprese"><!-- --></div></div>
+
+<p>You can test this by modifying the clone we made in the previous section
+and attempting to push a change.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+cd GitBestForks
+echo &gt;&gt; index.md
+git commit -am "test change"
+git push
+cd ..
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>Of course, now we have anonymous read-write access to our git
+repository exposed to the Internet.  I hope you were paying attention
+when I suggested doing this on irrelevant repos.</p>
+</div>
+
+
+<div class="chapter">
+  <a name="https" />
+  <h2>Anonymous read-write git https access</h2>
+  <p>Let's start adding some security.  First off, let's restrict this to
+https only.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+sed -i 's/^\( *\)\(Options.*\)/\1\2\n\1SSLRequireSSL/' /etc/httpd/conf.d/git.conf
+service httpd reload
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="example6%3Agit.conf">New git.conf</a>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+rm -rf GitBestForks
+git clone http://localhost/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>This should generate an error message instead of a successful clone.
+We can try again using https and see if we are more successful.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+GIT_SSL_NO_VERIFY=1 git clone https://localhost/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>Good, we now have anonymous read-write access, <b>over https</b>
+(putting something over https automatically makes it more secure,
+right?  Well, perhaps not, but we can actually add security soon.)</p>
+
+<p>One last item.  Now that we have changed git access from http to
+https, we can tell gitweb about it.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+sed -i 's%http://%https://%;' /etc/gitweb.conf
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="example6%3Agitweb.conf">New gitweb.conf</a>
+
+</div>
+
+
+<div class="chapter">
+  <a name="serververify" />
+  <h2>Adding https server certificate verification</h2>
+  <p>You may have noticed the "<code>GIT_SSL_NO_VERIFY=1</code>" on
+the command line?  Well, the system I was experimenting on didn't have
+a globally authorized and valid HTTPS certificate, so git aborted
+(with a particularly useless error message on this old RHEL version,
+modern git/libcurl's have more useful error messages).</p>
+
+<p>If you have an officially issued SSL certificate you may feel free to
+not use that environmental variable.  You can also install the
+certificate authority certificate, which signed the https certificate,
+into git (either globally or locally) to avoid the problem in another
+way (for self-signed certificates, the common case for unofficial
+certificates, this is the https certificate itself).</p>
+
+<p>We will go ahead with this process for the common case where you don't
+have a valid official certificate.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+HTTPS_CERT=$(egrep -r ^SSLCertificateFile $(apachectl -V | grep HTTPD_ROOT | sed 's/.*\"\(.*\)\".*/\1/') | awk '{print $2;}')
+openssl x509 -noout -issuer_hash -in $HTTPS_CERT
+openssl x509 -noout -subject_hash -in $HTTPS_CERT
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>If the two hashes match, your certificate is self-signed and you may
+use it as the certificate authority certificate as well.  If the
+hashes do not match, you must find your certificate authority
+certificate elsewhere.  Once you find the certificate authority
+certificate, run (substituting the correct path):</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+mkdir ~/.ca
+CA_CERT="$HTTPS_CERT"
+cp $CA_CERT ~/.ca/ca.crt
+git config --global http.sslCAInfo ~/.ca/ca.crt
+rm -rf GitBestForks
+git clone https://`hostname`/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>If the clone fails at this point (and did work before with
+<code>GIT_SSL_NO_VERIFY=1</code>), your problem is most likely that
+the certificate subject common name (CN) doesn't match the hostname
+you used.  You can try again with the proper hostname (and substitute
+that hostname wherever I say <code>`hostname`</code> in these instructions).  To
+find the hostname the certificate was issued to, run:</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+openssl x509 -noout -subject -nameopt utf8,multiline -in /etc/pki/tls/certs/localhost.crt | awk '$1=="commonName" { print $3;}'
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>But it is entirely possible (probable if you are running on AWS like I
+did) that the certificate was issued to a hostname which will never
+work.  If so, we can just generate a new one.</p>
+
+<p>I will be using a certificate authority script I developed (a
+wrapper around openssl).  It seems like everyone and their dog seems to
+have such a system, but none of the ones I have found have actually
+been easy to use for the purposes I wanted to (despite the name "easy"
+in some of their names).  You of course may choose to generate your
+certificate some other way, use different paths, use different
+certificate subject names, etc:</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+git clone git://github.com/SethRobertson/CA-baka
+CA-baka/CA-baka --workdir /etc/CA --country US --state NY --locality "New York" --organization "Examplz R Us" --newca "Examplz Private-Assurance CA" ""
+CA-baka/CA-baka --workdir /etc/CA --newserver `hostname`
+cp /etc/CA/ca.crt ~/.ca/ca.crt
+cp $HTTPS_CERT $HTTPS_CERT.orig
+cp /etc/CA/archive/`hostname`/server.crt $HTTPS_CERT
+HTTPS_KEY=$(egrep -r ^SSLCertificateKeyFile $(apachectl -V | grep HTTPD_ROOT | sed 's/.*\"\(.*\)\".*/\1/') | awk '{print $2;}')
+cp $HTTPS_KEY $HTTPS_KEY.orig
+cp /etc/CA/archive/`hostname`/server.key $HTTPS_KEY
+service httpd reload
+git clone https://`hostname`/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>After creating the new certificates issued to the correct hostname,
+update Apache to know about the new certificates, and copying the
+certificate authority certificate into the place we told git about,
+the git clone should definitely work.</p>
+
+</div>
+
+
+<div class="chapter">
+  <a name="authuserfile" />
+  <h2>Adding Basic AuthUserFile authentication</h2>
+  <p>We will be adding basic AuthUserFile authentication now.  However, I
+cannot actually recommend this as a good final configuration for you,
+since you will now have another source of access information and
+passwords which cannot be easily managed and will get forgotten and
+out of date.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+sed -i '/REMOTE_USER/d' /etc/httpd/conf.d/git.conf
+sed -i 's:\( *\)\(SSLRequireSSL\):\1\2\n\1AuthType basic\n\1AuthName "Private git repository"\n\1AuthUserFile /src/.git.passwd\n\1Require valid-user:' /etc/httpd/conf.d/git.conf
+service httpd reload
+htpasswd -b -c /src/.git.passwd user1 password1
+htpasswd -b /src/.git.passwd user2 password2
+rm -rf GitBestForks
+git clone https://`hostname`/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="example7%3Agit.conf">New git.conf</a>
+
+<p>The clone above should have failed (or at least started asking your
+for a username/password if you have a newer (1.7.9 or later) git).  We
+can then proceed with telling git (really libcurl) what the password
+is:</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+echo "machine `hostname` login user1 password password1" >> ~/.netrc
+rm -rf GitBestForks
+git clone https://`hostname`/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>The clone should then work.  But…you say you don't want to put your
+git password in plaintext in a file on disk?  Don't you believe in the
+security of your system?  If you have a recent enough version of git,
+you can use git's credential API to get the password from a native
+keychain.  Recent enough is defined as git 1.7.9 or more later.
+Unfortunately, I didn't have that recent a version of git on my test
+vm, so I had to install it (and the required dependencies).</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+yum install curl-devel zlib-devel openssl-devel expat-devel
+git clone git://github.com/gitster/git
+cd git
+make prefix=/usr/local install
+cd ..
+hash git
+git --version
+sed -i '/password1/d' ~/.netrc
+rm -rf GitBestForks
+git clone https://`hostname`/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>Git should prompt you for the username and password, and you if you
+enter "<code>user2</code>" and "<code>password2</code>", the clone
+will work.  You can explore using the other credential
+stores <code class="inline">man gitcredentials</code> on your own, but
+please do so only after finishing the rest of this walkthrough since
+having the system remember what credentials you are using will
+actually be counterproductive.</p>
+
+</div>
+
+<div class="chapter">
+  <a name="pam" />
+  <h2>Switching to Basic PAM authentication</h2>
+  <p>Well, if you remember, I recommended against using Basic
+AuthUserFile authentication because it forces a secondary management
+system to track all users.  However, for those who allow their users
+to log into their system, the credentials are already stored in PAM.
+If we can hook Apache into PAM, we would eliminate the additional
+source of authentication data.</p>
+
+<p>This can be done using "<code>mod_authnz_external</code>" and
+"<code>pwauth</code>", or "<code>mod_authn_sasl</code>", or
+"<code>mod_auth_pam</code>".  Unfortunately none of the modules are
+available on my test system (RHEL 6.2) by default and the latter is
+officially deprecated in any event.  We can go ahead and download,
+install, and use <code>mod_authn_sasl</code> as an example:</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+yum install httpd-devel
+wget 'http://sourceforge.net/projects/mod-authn-sasl/files/latest/download?source=files'
+tar xjf mod_authn_sasl-1.2.tar.bz2
+cd mod_authn_sasl-1.2
+./configure
+make install
+cd ..
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>In addition to the software, we also need to have a policy that PAM
+knows about:</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+cat &gt;/etc/pam.d/http &lt;&lt;EOF
+#%PAM-1.0
+auth            include         password-auth
+account         include         password-auth
+EOF
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>Once that is ready, we can modify the configuration file to look at
+this provider.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+sed -i 's:^\(Alias /git.*\):LoadModule authn_sasl_module modules/mod_authn_sasl.so\n\1:' /etc/httpd/conf.d/git.conf
+sed -i 's:\( *\)AuthUserFile.*:\1AuthBasicProvider sasl:' /etc/httpd/conf.d/git.conf
+service httpd reload
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="example8%3Agit.conf">New git.conf</a>
+
+<p>This uses saslauthd to perform the authentication, which was installed
+on my test system by default.  You obviously need to have saslauthd
+installed and running.  If it is not running, then we can start it up.
+It takes the "-a pam" argument to use PAM as the backend, but that was
+configured as the default for me.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+service saslauthd start
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>I needed to set up a user account for pam to work against.  Presumably
+you will already have users.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+adduser user3
+echo password3 | passwd --stdin user3
+rm -rf GitBestForks
+git clone https://`hostname`/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<div class="predivse"><div class="befaftprese"><!-- --></div><pre class="se"><code>
+cat &gt; httpd_can_saslauthd.te &lt;&lt;EOF
+module httpd_can_saslauthd 1.0;
+
+require {
+        type httpd_t;
+        type saslauthd_var_run_t;
+        type saslauthd_t;
+        class dir search;
+        class sock_file write;
+        class unix_stream_socket connectto;
+}
+
+#============= httpd_t ==============
+allow httpd_t saslauthd_var_run_t:dir search;
+allow httpd_t saslauthd_var_run_t:sock_file write;
+allow httpd_t saslauthd_t:unix_stream_socket connectto;
+EOF
+checkmodule -M -m -o httpd_can_saslauthd.mod httpd_can_saslauthd.te &amp;&amp;
+semodule_package -o httpd_can_saslauthd.pp -m httpd_can_saslauthd.mod &amp;&amp;
+semodule -i httpd_can_saslauthd.pp
+</code></pre><div class="befaftprese"><!-- --></div></div>
+
+<p>When prompted, enter the new username/password
+(<code>user3</code>/<code>password3</code>) combination.  It should
+work.</p>
+
+</div>
+
+<div class="chapter">
+  <a name="ldap" />
+  <h2>Switching to Basic LDAP authentication</h2>
+  <p>PAM is nice and everything but perhaps you want to restrict access to
+your servers differently from the much larger set of people who have
+access to source code.  Obviously you could write some complicated PAM
+policy, and of course, you can simply use saslauthd and point it to
+the LDAP backend instead of the PAM backend, but we could instead use
+a more standard (meaning installed by default for RHEL) LDAP specific
+policy.</p>
+
+<p>Hopefully you already have an LDAP system set up, but that is not true
+for my test system, so I will first go through that exercise:</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+yum install openldap openldap-servers openldap-clients
+find /etc/openldap/slapd.d -type f | xargs sed -i 's/dc=my-domain/dc=example/'
+echo "olcRootPW: `slappasswd -s ldap_password`" &gt;&gt; /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}bdb.ldif
+service slapd start
+
+cat &gt; /tmp/GOTW.ldif &lt;&lt;'EOF'
+dn: dc=example,dc=com
+objectclass: dcObject
+objectclass: organization
+o: Examplz R Us
+dc: example
+
+dn: cn=Manager,dc=example,dc=com
+objectclass: organizationalRole
+cn: Manager
+
+dn: ou=People,dc=example,dc=com
+ou: People
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Group,dc=example,dc=com
+ou: Group
+objectClass: top
+objectClass: organizationalUnit
+
+dn: cn=dev,ou=Group,dc=example,dc=com
+objectClass: posixGroup
+objectClass: top
+cn: dev
+userPassword: {crypt}x
+gidNumber: 4004
+memberUid: user5
+
+dn: cn=users,ou=Group,dc=example,dc=com
+objectClass: posixGroup
+objectClass: top
+cn: dev
+userPassword: {crypt}x
+gidNumber: 4003
+
+dn: cn=sales,ou=Group,dc=example,dc=com
+objectClass: posixGroup
+objectClass: top
+cn: sales
+userPassword: {crypt}x
+gidNumber: 4005
+memberUid: user4
+
+dn: uid=user4,ou=People,dc=example,dc=com
+uid: user4
+cn: user4
+objectClass: account
+objectClass: posixAccount
+objectClass: top
+objectClass: shadowAccount
+userPassword: {crypt}$1$dKQtB.Ir$S9hUXtplYff.yw6T1UF3I0
+shadowLastChange: 15155
+shadowMin: 0
+shadowMax: 99999
+shadowWarning: 7
+loginShell: /sbin/nologin
+uidNumber: 4001
+gidNumber: 4003
+homeDirectory: /tmp
+gecos: user4
+
+dn: uid=user5,ou=People,dc=example,dc=com
+uid: user5
+cn: user5
+objectClass: account
+objectClass: posixAccount
+objectClass: top
+objectClass: shadowAccount
+userPassword: {crypt}$1$dKQtB.Ir$a3ieZuk5h7bJ5B6/SyGI81
+shadowLastChange: 15155
+shadowMin: 0
+shadowMax: 99999
+shadowWarning: 7
+loginShell: /sbin/nologin
+uidNumber: 4002
+gidNumber: 4003
+homeDirectory: /tmp
+gecos: user5
+
+EOF
+ldapadd -h localhost -w ldap_password -D 'cn=manager,dc=example,dc=com' &lt; /tmp/GOTW.ldif
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>I've chosen <code>mod_authnz_ldap</code> as an apparently flexible LDAP
+authentication scheme.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+sed -i '/authn_sasl/d' /etc/httpd/conf.d/git.conf
+sed -i 's%^\( *\)AuthBasic.*%\1AuthBasicProvider ldap\n\1AuthLDAPURL "ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)"%' /etc/httpd/conf.d/git.conf
+service httpd reload
+rm -rf GitBestForks
+git clone https://`hostname`/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="example9%3Agit.conf">New git.conf</a>
+
+<p>Please enter "<code>user4</code>" and "<code>password4</code>" when
+you clone, which should work.  Congratulations, you are now cooking
+with LDAP!
+</p>
+
+</div>
+
+<div class="chapter">
+  <a name="ldap_group" />
+  <h2>Restricting LDAP access by group</h2>
+  <p>If were reading particularly carefully, you might have noticed in
+the LDIF above, I placed "<code>user4</code>" into the
+"<code>sales</code>" group.  "<code>user5</code>" was the one placed
+into the "<code>dev</code>" group.  How can we restrict access to only
+members of group dev?</p>
+
+<p>Well, unfortunately there are like 15 billion different standards
+for LDAP groups (only a minor exaggeration).  I will use the nis
+RFC2307 format for basic groups.  Other group systems can be used as
+well, please read
+the <a href="http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html">authnz
+documentation</a>.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+sed -i 's%^\( *\)\(AuthLDAPURL.*\)%\1\2\n\1AuthLDAPGroupAttribute memberUid\n\1AuthLDAPGroupAttributeIsDn off\n\1Require ldap-group cn=dev,ou=Group,dc=example,dc=com%' /etc/httpd/conf.d/git.conf
+rm -rf GitBestForks
+git clone https://`hostname`/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="examplea%3Agit.conf">New git.conf</a>
+
+<p>If you enter "<code>user4</code>" and "<code>password4</code>", it
+should <em>not</em> work.  Then try the last command again and enter
+"<code>user5</code>" and "<code>password5</code>",
+which <em>should</em> work.</p>
+
+</div>
+
+
+<div class="chapter">
+  <a name="ssl" />
+  <h2>Switching to SSL client certificate authentication</h2>
+  <p>LDAP is all nice and everything, especially with keystore credential
+storage so you don't have to enter the username/password every time,
+but some people would prefer to use SSL certificate authentication
+instead.  This can be a very convenient way to get access with a
+single-sign-on type approach, without requiring the overhead of
+setting up LDAP and (in some administrative domains) political
+problems inherent with adding users to the LDAP system.  However,
+instead of setting up LDAP, you have to set up a user based
+certificate system.</p>
+
+<p>Hopefully you already have properly signed x509 certificate already
+distributed to all users, but in case you do not, we will walk you
+through the process of setting it up.</p>
+
+<p>If you did NOT create a server certificate using <code>CA-baka</code> earlier, then
+you need to run the following steps.  If you <em>did</em> create the certificate,
+then <em>skip</em> over these commands.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+git clone git://github.com/SethRobertson/CA-baka
+CA-baka/CA-baka --workdir /etc/CA --country US --state NY --locality "New York" --organization "Examplz R Us" --newca "Examplz Private-Assurance CA" ""
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>Now you can issue certificates to some users.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+CA-baka/CA-baka --workdir /etc/CA --organizationalunit "Sales" --newclient user6@example.com
+CA-baka/CA-baka --workdir /etc/CA --organizationalunit "SCM" --newclient user7@example.com
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>Not too painful.  The "<code>--organizationunit</code>" (OU) added
+to the client certificates is to distinguish developers from other
+random certificates which might have been issued by the same
+authority, but if you are only issuing developer certificates, you
+don't need to include that (or can include that in
+the <code>--newca</code> lines).</p>
+
+<p>In the below example, I am setting <code>SSLCACertificateFile</code> in the
+<code>git.conf</code> for convenience, but normally one would configure it near the
+<code>SSLCertificateFile</code> definition, probably
+in <code>ssl.conf</code>.  That configuration key should point at the
+certificate which issued the client certificates you are attempting to
+validate.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+sed -i 's:^\(Alias /git.*\):SSLCACertificateFile /etc/CA/ca.crt\n\1:' /etc/httpd/conf.d/git.conf
+sed -i -e '/^ *Auth/d' -e '/^ *Require/d' /etc/httpd/conf.d/git.conf
+sed -i 's:\( *\)\(SSLRequireSSL\):\1\2\n\1SSLVerifyClient require\n\1SSLVerifyDepth 1\n\1SSLUserName SSL_CLIENT_S_DN_CN:' /etc/httpd/conf.d/git.conf
+service httpd reload
+cp /etc/CA/archive/user6@example.com/client.crt ~/.ca/user6.crt
+cp /etc/CA/archive/user6@example.com/client.key ~/.ca/user6.key
+git config --global http.sslCert ~/.ca/user6.crt
+git config --global http.sslKey ~/.ca/user6.key
+rm -rf GitBestForks
+git clone https://`hostname`/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="exampleb%3Agit.conf">New git.conf</a>
+
+<p>The clone should work without you being prompted for passwords or
+anything, showing that SSL client certificate authentication is
+working.  Note as in all other examples, the gitweb configuration was
+also changed.  This means that you must load certificates into your
+web browser in order to view the content.  In the example above, you
+can install the file
+"<code>/etc/CA/archive/user6@example.com/client.p12</code>", which has
+the static password "<code>mypass</code>", into your browser.
+See <a href="http://docdb.fnal.gov/import-cert.html">Fermilab</a> for
+some hints on how to do this in different browsers.</p>
+
+</div>
+
+
+<div class="chapter">
+  <a name="ssl_group" />
+  <h2>Restricting client certificates by group</h2>
+  <p>Again, the user we tested with was part of group sales (gotta watch
+those Sales 'droids every minute!).  So we can restrict access to the
+git repository to only users with the organizationalunit SCM.</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+sed -i 's:\( *\)\(SSLUserName.*\):\1\2\n\1SSLRequire ( %{SSL_CLIENT_S_DN_OU} eq "SCM" ):' /etc/httpd/conf.d/git.conf
+service httpd reload
+rm -rf GitBestForks
+git clone https://`hostname`/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+<a href="examplec%3Agit.conf">New git.conf</a>
+
+<p>That should have failed because we were still using the sales ssl
+certificate.  Now we can try as a different user:</p>
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+cp /etc/CA/archive/user7@example.com/client.crt ~/.ca/user7.crt
+cp /etc/CA/archive/user7@example.com/client.key ~/.ca/user7.key
+git config --global http.sslCert ~/.ca/user7.crt
+git config --global http.sslKey ~/.ca/user7.key
+rm -rf GitBestForks
+git clone https://`hostname`/G/GitBestForks
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+<p>That should work since user7 is in the correct group. Note that
+gitweb will not work until you delete the user6 certificate from your
+browser, and add the user7 certificate.</p>
+
+</div>
+
+<!--
+If you need to do fine-grained access control where different users should
+have access to different git repositories, you should look at gitolite.
+
+This only works under the old style v2 gitolite.  New style v3
+gitolite doesn't support it yet.
+
+While I am going to be testing this with the last configur
+
+Follow the instructions in
+http://sitaramc.github.com/gitolite/http.html using the latest tagged
+v2 release (until v3 supports http).
+
+
+<div class="predivse"><div class="befaftprese"></div><pre class="se"><code>
+semanage fcontext -a -t httpd_git_script_exec_t /src/bin/gl-auth-command
+restorecon -R -v  /src/bin/gl-auth-command
+cat &gt; /tmp/gitolite.te &lt;&lt;EOF
+module gitolite 1.0;
+
+require {
+        type httpd_git_script_t;
+        type usr_t;
+        class file { execute execute_no_trans };
+}
+
+#============= httpd_git_script_t ==============
+allow httpd_git_script_t usr_t:file execute;
+allow httpd_git_script_t usr_t:file execute_no_trans;
+EOF
+checkmodule -M -m -o /tmp/gitolite.mod /tmp/gitolite.te &amp;&amp;
+semodule_package -o /tmp/gitolite.pp -m  /tmp/gitolite.mod &amp;&amp;
+semodule -i /tmp/gitolite.pp
+</code></pre><div class="befaftprese"></div></div>
+
+exampled%3Agit.conf
+exampled%3Agitweb.conf
+
+It worked for me. W0OT!
+-->
+
+<div class="chapter">
+  <a name="Cleanup" />
+  <h2>Limited Cleanup</h2>
+
+  <p>Please remember that if you followed the instructions above, we
+  disabled iptables, added a system account user, created a
+  certificate authority, created some test directories, installed new
+  httpd certificates, and installed a
+  new <code>/etc/gitweb.conf</code>.</p>
+
+
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+service iptables start
+userdel -rf user3
+rm -ri /etc/CA /src ~/GOTW ~/.ca /etc/pam.d/http
+[ -f $HTTPS_CERT.orig ] && ( mv $HTTPS_CERT.orig $HTTPS_CERT; mv $HTTPS_KEY.orig $HTTPS_KEY )
+[ -f /etc/gitweb.conf.dist ] && mv /etc/gitweb.conf.dist /etc/gitweb.conf
+</code></pre><div class="befaftpre"><!-- --></div></div>
+
+  <p>Reverting other configuration changes (such as our starting
+  httpd, installing git, gitweb, LDAP and sometimes other software,
+  configuring LDAP, loading LDAP accounts,
+  modifying <code>/etc/httpd/conf.d/git.conf</code>, modifying SELinux
+  policy, installing <code>mod_authn_sasl</code>) is left as an
+  exercise for the reader.</p>
+</div>
+
+
+<div class="chapter">
+  <a name="Disclaimer" />
+  <h2>Disclaimer</h2>
+
+  <p>Information is not promised or guaranteed to be correct, current, or
+    complete, and may be out of date and may contain technical
+    inaccuracies or typographical errors.  Any reliance on this material
+    is at your own risk.  No one assumes any responsibility (and everyone
+    expressly disclaims responsibility) for updates to keep information
+    current or to ensure the accuracy or completeness of any posted
+    information. Accordingly, you should confirm the accuracy and
+    completeness of all posted information before making any decision
+    related to any and all matters described.</p>
+</div>
+
+<div class="chapter">
+  <a name="Copyright" />
+  <h2>Copyright</h2>
+
+  <p>Copyright ⓒ 2012 Seth Robertson</p>
+
+  <p>This document is licensed and distributed to you through the use of
+    two licenses.  You may pick the license you prefer.</p>
+
+  <p>Creative Commons Attribution-ShareAlike 3.0 Generic (CC BY-SA 3.0)
+    http://creativecommons.org/licenses/by-sa/3.0/</p>
+
+  <p>OR</p>
+
+  <p>GNU Free Documentation v1.3 with no Invariant, Front, or Back Cover texts.
+    http://www.gnu.org/licenses/fdl.html</p>
+
+  <p>I would appreciate changes being sent back to me, being notified if
+    this is used or highlighted in some special way, and links being
+    maintained back to
+    the <a href="http://sethrobertson.github.com/HowToPutGitOnTheWeb/">authoritative
+      source</a>.  Thanks.</p>
+</div>
+
+<div class="chapter">
+  <a name="Thanks" />
+  <h2>Thanks</h2>
+
+  <p>Thanks to the experts on #git and my coworkers for review, feedback,
+    and ideas.</p>
+</div>
+
+<div class="chapter">
+  <h2>Comments</h2>
+
+  <p>Comments and improvements welcome.</p>
+
+  <p><a href="https://github.com/SethRobertson/HowToPutGitOnTheWeb/issues">Use
+      the github issue tracker</a> or discuss with SethRobertson (and
+    others) on <a href="irc://irc.freenode.net/git">#git</a></p>
+</div>
+
+    </div>
+    <div id='footer'><p><a href="http://sethrobertson.github.com">Other technical projects</a></p></div>
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-28660801-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+	var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+	var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+  </body>
+</html>
