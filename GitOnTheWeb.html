@@ -18,6 +18,8 @@
       pre.se { border:3pt solid red; padding: 0em 1em 1em 1em; float: left; color: red; background:#ffeeee; }
       pre.se:before { content: "SELinux instructions"; display: block; font-size:125%; font-weight:bold; padding-bottom: 5px; }
       pre.none { border:0pt solid white; float: none;}
+      pre.cli { border:1pt solid black; padding: 0em 1em 1em 1em; float: left; }
+      pre.cli:before { content: "Commands"; display: block; font-size:125%; font-weight:bold; color: gray; padding-bottom: 0px; }
       code.inline { white-space: nowrap; border:1pt solid gray; padding: 1pt; }
       table,td,tr,th { border:1px solid black; }
       div.prediff { margin: 0pt 50pt 0pt 50pt; opacity:0.6; filter:alpha(opacity=60);}
@@ -100,7 +102,7 @@ you are comfortable with, you may stop at that time.</p>
 <p>The RHEL 6.2 instance I was running of course had Apache with https
 installed.  Additionally, I installed the "git" and "gitweb" packages.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 yum install git gitweb
 service iptables stop
 service apache2 start
@@ -144,21 +146,23 @@ file we will be doing the majority of our work with.</p>
 <p>However, I'm going to recommend adding "/g" as a shortcut to the
 default "/git" to shorten the link lengths.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 echo "Alias /g /var/www/git" &gt;&gt; /etc/httpd/conf.d/git.conf
 </code></pre><div class="befaftpre"><!-- --></div></div>
 
+<a href="example2%3Agit.conf">
 <div class="prediff"><div class="befaftdiff"><!-- --></div><pre class="diff"><code>
    AddHandler cgi-script .cgi
    DirectoryIndex gitweb.cgi
  &lt;/Directory&gt;
 <diffp>+Alias /g /var/www/git</diffp>
 </code></pre><div class="befaftdiff"><!-- --></div></div>
+</a>
 
 <p>This generates a <a href="example2%3Agit.conf">revised git.conf</a>
 so we need to tell Apache about the configuration change:</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 service httpd reload
 </code></pre><div class="befaftpre"><!-- --></div></div>
 
@@ -166,7 +170,7 @@ service httpd reload
 repositories in /src, so I need to tell gitweb where to find those
 repositories.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 mv /etc/gitweb.conf /etc/gitweb.conf.dist
 echo 'our $projectroot = "/src";' &gt; /etc/gitweb.conf
 </code></pre><div class="befaftpre"><!-- --></div></div>
@@ -225,7 +229,7 @@ something more like:</p>
 
 <p><code>http://`hostname`/g//libkfork/ab9f5f3</code></p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 cat &gt;&gt; /etc/httpd/conf.d/git.conf &lt;&lt;'EOF'
 RewriteEngine on
 RewriteLog "/var/log/httpd/rewrite.log"
@@ -265,7 +269,7 @@ urge you to do this.</p>
   <p>Now that we have gitweb access, it is time to add access to the git
 repositories.  We will start with simple read-only access over HTTP.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 cat &gt;&gt; /etc/httpd/conf.d/git.conf &lt;&lt;'EOF'
 ScriptAlias /G/ /usr/libexec/git-core/git-http-backend/
 &lt;Directory "/usr/libexec/git-core/"&gt;
@@ -311,7 +315,7 @@ recent git.</p>
 <p>One last item.  Now that we have http access to the repository, we
 can tell gitweb about it.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 echo "our @git_base_url_list = ('http://`hostname`/G);" &gt;&gt; /etc/gitweb.conf
 </code></pre><div class="befaftpre"><!-- --></div></div>
 <a href="example4%3Agitweb.conf">New gitweb.conf</a>
@@ -333,7 +337,7 @@ echo "our @git_base_url_list = ('http://`hostname`/G);" &gt;&gt; /etc/gitweb.con
 git what user is involved.  Of course, since this is still anonymous,
 we are using a random name.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 sed -i 's/^\( *SetEnv \)\(GIT_HTTP_EXPORT_ALL\)/\1\2\n\1REMOTE_USER anonymousweb/' /etc/httpd/conf.d/git.conf
 service httpd reload
 </code></pre><div class="befaftpre"><!-- --></div></div>
@@ -358,7 +362,7 @@ restorecon -R -v /src
 <p>You can test this by modifying the clone we made in the previous section
 and attempting to push a change.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 cd GitBestForks
 echo &gt;&gt; index.md
 git commit -am "test change"
@@ -378,7 +382,7 @@ when I suggested doing this on irrelevant repos.</p>
   <p>Let's start adding some security.  First off, let's restrict this to
 https only.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 sed -i 's/^\( *\)\(Options.*\)/\1\2\n\1SSLRequireSSL/' /etc/httpd/conf.d/git.conf
 service httpd reload
 </code></pre><div class="befaftpre"><!-- --></div></div>
@@ -400,7 +404,7 @@ service httpd reload
  &lt;/Directory&gt;
 </code></pre><div class="befaftdiff"><!-- --></div></div>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 rm -rf GitBestForks
 git clone http://localhost/G/GitBestForks
 </code></pre><div class="befaftpre"><!-- --></div></div>
@@ -408,7 +412,7 @@ git clone http://localhost/G/GitBestForks
 <p>This should generate an error message instead of a successful clone.
 We can try again using https and see if we are more successful.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 GIT_SSL_NO_VERIFY=1 git clone https://localhost/G/GitBestForks
 </code></pre><div class="befaftpre"><!-- --></div></div>
 
@@ -419,7 +423,7 @@ right?  Well, perhaps not, but we can actually add security soon.)</p>
 <p>One last item.  Now that we have changed git access from http to
 https, we can tell gitweb about it.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 sed -i 's%http://%https://%;' /etc/gitweb.conf
 </code></pre><div class="befaftpre"><!-- --></div></div>
 <a href="example6%3Agitweb.conf">New gitweb.conf</a>
@@ -453,7 +457,7 @@ this is the https certificate itself).</p>
 <p>We will go ahead with this process for the common case where you don't
 have a valid official certificate.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 HTTPS_CERT=$(egrep -r ^SSLCertificateFile $(apachectl -V | grep HTTPD_ROOT | sed 's/.*\"\(.*\)\".*/\1/') | awk '{print $2;}')
 openssl x509 -noout -issuer_hash -in $HTTPS_CERT
 openssl x509 -noout -subject_hash -in $HTTPS_CERT
@@ -465,7 +469,7 @@ hashes do not match, you must find your certificate authority
 certificate elsewhere.  Once you find the certificate authority
 certificate, run (substituting the correct path):</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 mkdir ~/.ca
 CA_CERT="$HTTPS_CERT"
 cp $CA_CERT ~/.ca/ca.crt
@@ -481,7 +485,7 @@ you used.  You can try again with the proper hostname (and substitute
 that hostname wherever I say <code>`hostname`</code> in these instructions).  To
 find the hostname the certificate was issued to, run:</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 openssl x509 -noout -subject -nameopt utf8,multiline -in /etc/pki/tls/certs/localhost.crt | awk '$1=="commonName" { print $3;}'
 </code></pre><div class="befaftpre"><!-- --></div></div>
 
@@ -497,7 +501,7 @@ in some of their names).  You of course may choose to generate your
 certificate some other way, use different paths, use different
 certificate subject names, etc:</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 git clone git://github.com/SethRobertson/CA-baka
 CA-baka/CA-baka --workdir /etc/CA --country US --state NY --locality "New York" --organization "Examplz R Us" --newca "Examplz Private-Assurance CA" ""
 CA-baka/CA-baka --workdir /etc/CA --newserver `hostname`
@@ -528,7 +532,7 @@ since you will now have another source of access information and
 passwords which cannot be easily managed and will get forgotten and
 out of date.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 sed -i '/REMOTE_USER/d' /etc/httpd/conf.d/git.conf
 sed -i 's:\( *\)\(SSLRequireSSL\):\1\2\n\1AuthType basic\n\1AuthName "Private git repository"\n\1AuthUserFile /src/.git.passwd\n\1Require valid-user:' /etc/httpd/conf.d/git.conf
 service httpd reload
@@ -570,7 +574,7 @@ for a username/password if you have a newer (1.7.9 or later) git).  We
 can then proceed with telling git (really libcurl) what the password
 is:</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 echo "machine `hostname` login user1 password password1" >> ~/.netrc
 rm -rf GitBestForks
 git clone https://`hostname`/G/GitBestForks
@@ -584,7 +588,7 @@ keychain.  Recent enough is defined as git 1.7.9 or more later.
 Unfortunately, I didn't have that recent a version of git on my test
 vm, so I had to install it (and the required dependencies).</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 yum install curl-devel zlib-devel openssl-devel expat-devel
 git clone git://github.com/gitster/git
 cd git
@@ -624,7 +628,7 @@ available on my test system (RHEL 6.2) by default and the latter is
 officially deprecated in any event.  We can go ahead and download,
 install, and use <code>mod_authn_sasl</code> as an example:</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 yum install httpd-devel
 wget 'http://sourceforge.net/projects/mod-authn-sasl/files/latest/download?source=files'
 tar xjf mod_authn_sasl-1.2.tar.bz2
@@ -637,7 +641,7 @@ cd ..
 <p>In addition to the software, we also need to have a policy that PAM
 knows about:</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 cat &gt;/etc/pam.d/http &lt;&lt;EOF
 #%PAM-1.0
 auth            include         password-auth
@@ -648,7 +652,7 @@ EOF
 <p>Once that is ready, we can modify the configuration file to look at
 this provider.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 sed -i 's:^\(Alias /git.*\):LoadModule authn_sasl_module modules/mod_authn_sasl.so\n\1:' /etc/httpd/conf.d/git.conf
 sed -i 's:\( *\)AuthUserFile.*:\1AuthBasicProvider sasl:' /etc/httpd/conf.d/git.conf
 service httpd reload
@@ -684,14 +688,14 @@ installed and running.  If it is not running, then we can start it up.
 It takes the "-a pam" argument to use PAM as the backend, but that was
 configured as the default for me.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 service saslauthd start
 </code></pre><div class="befaftpre"><!-- --></div></div>
 
 <p>I needed to set up a user account for pam to work against.  Presumably
 you will already have users.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 adduser user3
 echo password3 | passwd --stdin user3
 rm -rf GitBestForks
@@ -741,7 +745,7 @@ policy.</p>
 <p>Hopefully you already have an LDAP system set up, but that is not true
 for my test system, so I will first go through that exercise:</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 yum install openldap openldap-servers openldap-clients
 find /etc/openldap/slapd.d -type f | xargs sed -i 's/dc=my-domain/dc=example/'
 echo "olcRootPW: `slappasswd -s ldap_password`" &gt;&gt; /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}bdb.ldif
@@ -834,7 +838,7 @@ ldapadd -h localhost -w ldap_password -D 'cn=manager,dc=example,dc=com' &lt; /tm
 <p>I've chosen <code>mod_authnz_ldap</code> as an apparently flexible LDAP
 authentication scheme.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 sed -i '/authn_sasl/d' /etc/httpd/conf.d/git.conf
 sed -i 's%^\( *\)AuthBasic.*%\1AuthBasicProvider ldap\n\1AuthLDAPURL "ldap://localhost:389/ou=People,dc=example,dc=com?uid?sub?(objectClass=*)"%' /etc/httpd/conf.d/git.conf
 service httpd reload
@@ -891,7 +895,7 @@ well, please read
 the <a href="http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html">authnz
 documentation</a>.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 sed -i 's%^\( *\)\(AuthLDAPURL.*\)%\1\2\n\1AuthLDAPGroupAttribute memberUid\n\1AuthLDAPGroupAttributeIsDn off\n\1Require ldap-group cn=dev,ou=Group,dc=example,dc=com%' /etc/httpd/conf.d/git.conf
 rm -rf GitBestForks
 git clone https://`hostname`/G/GitBestForks
@@ -951,14 +955,14 @@ then <em>skip</em> over these commands.  Please note that the client certificate
 certificate.  You can have the web server certificate be official and
 the client certificates be self-generated.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 git clone git://github.com/SethRobertson/CA-baka
 CA-baka/CA-baka --workdir /etc/CA --country US --state NY --locality "New York" --organization "Examplz R Us" --newca "Examplz Private-Assurance CA" ""
 </code></pre><div class="befaftpre"><!-- --></div></div>
 
 <p>Now you can issue certificates to some users.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 CA-baka/CA-baka --workdir /etc/CA --organizationalunit "Sales" --newclient user6@example.com
 CA-baka/CA-baka --workdir /etc/CA --organizationalunit "SCM" --newclient user7@example.com
 </code></pre><div class="befaftpre"><!-- --></div></div>
@@ -977,7 +981,7 @@ in <code>ssl.conf</code>.  That configuration key should point at the
 certificate which issued the client certificates you are attempting to
 validate.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 sed -i 's:^\(Alias /git.*\):SSLCACertificateFile /etc/CA/ca.crt\n\1:' /etc/httpd/conf.d/git.conf
 sed -i -e '/^ *Auth/d' -e '/^ *Require/d' /etc/httpd/conf.d/git.conf
 sed -i 's:\( *\)\(SSLRequireSSL\):\1\2\n\1SSLVerifyClient require\n\1SSLVerifyDepth 1\n\1SSLUserName SSL_CLIENT_S_DN_CN:' /etc/httpd/conf.d/git.conf
@@ -1052,7 +1056,7 @@ some hints on how to do this in different browsers.</p>
 those Sales 'droids every minute!).  So we can restrict access to the
 git repository to only users with the organizationalunit SCM.</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 sed -i 's:\( *\)\(SSLUserName.*\):\1\2\n\1SSLRequire ( %{SSL_CLIENT_S_DN_OU} eq "SCM" ):' /etc/httpd/conf.d/git.conf
 service httpd reload
 rm -rf GitBestForks
@@ -1080,7 +1084,7 @@ git clone https://`hostname`/G/GitBestForks
 <p>That should have failed because we were still using the sales ssl
 certificate.  Now we can try as a different user:</p>
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 cp /etc/CA/archive/user7@example.com/client.crt ~/.ca/user7.crt
 cp /etc/CA/archive/user7@example.com/client.key ~/.ca/user7.key
 git config --global http.sslCert ~/.ca/user7.crt
@@ -1147,7 +1151,7 @@ It worked for me. W0OT!
   new <code>/etc/gitweb.conf</code>.</p>
 
 
-<div class="prediv"><div class="befaftpre"><!-- --></div><pre><code>
+<div class="prediv"><div class="befaftpre"><!-- --></div><pre class="cli"><code>
 service iptables start
 userdel -rf user3
 rm -ri /etc/CA /src ~/GOTW ~/.ca /etc/pam.d/http
